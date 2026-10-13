@@ -13,6 +13,7 @@ A full-stack web application developed for Wichy Coconut, a Sri Lankan coconut p
 - [Database Design](#database-design)
 - [Installation and Setup](#installation-and-setup)
 - [User Roles and Access Control](#user-roles-and-access-control)
+- [Default User Credentials](#default-user-credentials)
 - [Project Structure](#project-structure)
 - [Screenshots](#screenshots)
 - [Author](#author)
@@ -148,7 +149,7 @@ The complete database schema is available in the `database/schema.sql` file.
 
    ```bash
    cd C:\xampp\htdocs
-   git clone https://github.com/vikumkodikara/Wichy-Plantation-Company-Project-.git wichy-plantation
+   git clone https://github.com/vikumkodikara/Wichy-Plantation-Project.git wichy-plantation
    ```
 
    Alternatively, download the ZIP file and extract it into `C:\xampp\htdocs\wichy-plantation`.
@@ -206,6 +207,21 @@ The system implements three distinct user roles, each with different levels of a
    - **Employee** users are directed to the Employee Module (`employee/display_wichy_coconut.php`)
    - **Customer** users are directed to the Product Catalogue (`public/items.php`)
 3. Password security enforces a minimum of 6 characters with mandatory uppercase, lowercase, numeric, and special character requirements
+
+---
+
+## Default User Credentials
+
+For academic examination, evaluation, and system demonstration purposes, the database includes pre-configured user accounts for each role:
+
+| Role | Username | Email | Password | Landing Page | Capabilities |
+|------|----------|-------|----------|--------------|--------------|
+| Administrator | `Nimantha` | `nimantha@gmail.com` | `Admin@123` | `admin.php` | Product CRUD, order status management, employee records, inquiries & comment moderation |
+| Employee | `Dasun` | `dasun@gmail.com` | `123456` | `employee/display_wichy_coconut.php` | Fat-rate formulation data tables (6% to 30%), quality control inspection logging |
+| Employee | `Pasan` | `pasan@gmail.com` | `123456` | `employee/display_wichy_coconut.php` | Fat-rate formulation data tables, competitor ingredient comparison |
+| Customer | `nipun` | `nipun@gmail.com` | `123456` | `public/items.php` | Product catalog browsing, cart operations, multi-step checkout (COD/Card) |
+
+> Note: User passwords are encrypted using standard PHP `password_hash()` (Bcrypt algorithm). The accounts above are pre-populated and active after importing `database/schema.sql`.
 
 ---
 
