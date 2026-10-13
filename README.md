@@ -7,6 +7,7 @@ A full-stack web application developed for Wichy Coconut, a Sri Lankan coconut p
 ## Table of Contents
 
 - [Overview](#overview)
+- [Business Case and Problem Statement](#business-case-and-problem-statement)
 - [Features](#features)
 - [System Architecture](#system-architecture)
 - [Technology Stack](#technology-stack)
@@ -26,6 +27,57 @@ A full-stack web application developed for Wichy Coconut, a Sri Lankan coconut p
 Wichy Plantation Company is a coconut-based product manufacturer operating in Sri Lanka. This web application was developed to digitise and streamline the company's core business operations including product management, customer order processing, employee data management, and quality control inspections across multiple coconut milk fat-rate categories.
 
 The system follows a role-based access control model with three distinct user roles: Administrator, Employee, and Customer. Each role has a dedicated interface tailored to its operational requirements.
+
+---
+
+## Business Case and Problem Statement
+
+### Organizational Context
+
+Wichy Plantation Company (Pvt) Ltd is an established Sri Lankan coconut manufacturing and exporting enterprise. The company operates two primary business vectors:
+
+1. **B2B Contract Manufacturing & Global Export**: Custom coconut milk formulation and bulk manufacturing for prominent international client brands, including **Or Food and Cafe**, **Derrimon**, **KTC**, **Binzagr**, **KLF**, and **EDS**.
+2. **B2C Consumer Product Portfolio**: Value-added consumer goods including Organic Virgin Coconut Oil, King Coconut Water, Organic Coconut Flour, Coconut Milk Drinks, and coconut confectionery.
+
+### The Problem: Legacy Manufacturing Operations and Market Limitations
+
+#### 1. Vulnerabilities of Traditional Paper-Based Formulation Logs
+
+In the B2B export division, international buyers require customized coconut milk batches tailored to their local culinary standards, commercial specifications, and food health regulations. Formulations vary across distinct fat percentages (6%, 9%, 10%, 12%, 18%, 22%, and 30%) and specialized additive ratios, including:
+
+- **Stabilizers and Thickeners**: Xanthan Gum
+- **Sweetening Agents**: Refined Sugar
+- **Emulsifiers**: Polysorbate
+- **Acidity Regulators**: Vinegar
+
+Crucially, client companies periodically revise their formula ratios based on changing commercial agreements or import standards. Prior to this system, the factory recorded all formulation specifications and quality inspection records in **traditional physical paper ledgers and logbooks**:
+
+- **Physical Degradation and Data Loss**: Harsh factory environmental conditions (humidity, grease, frequent handling) caused physical paper ledgers to deteriorate over time, leading to lost, faded, or completely vanished proprietary recipes.
+- **Absence of Security and Access Control**: Confidential client recipes were stored in physical books with zero access restrictions, confidentiality controls, or disaster recovery backups.
+- **Operational Bottlenecks and Human Error**: Factory workers and quality controllers had to manually search through decaying notebooks, creating production delays and introducing significant risk of formula mismatches during batch preparation.
+
+#### 2. Lack of a Digital Domestic Retail Channel
+
+While Wichy Plantation maintained strong bulk export operations, the company **lacked any digital retail channel** to distribute its value-added consumer products (Organic Coconut Milk, Virgin Coconut Oil, Coconut Flour, Coconut Water, Confectionery) directly to domestic consumers in Sri Lanka. Customers had no convenient mechanism to explore the product catalogue, submit retail orders, or purchase items online.
+
+### The Solution: An Integrated Dual-Purpose Digital Platform
+
+To address both operational vulnerabilities, this full-stack web application was engineered to provide a dual-purpose digital ecosystem:
+
+#### 1. Centralized Recipe and Quality Control Database (B2B Manufacturing)
+
+- Replaced the vulnerable physical logbook with a robust, relational **MySQL database** containing specialized tables for each fat-rate formulation tier (`fatrate6` through `fatrate30`).
+- Implemented a role-restricted **Quality Controller & Employee Panel** allowing authorized staff to:
+  - Instantaneously retrieve official recipe formulations for any foreign client company.
+  - Add new formulation recipes and dynamically adjust ingredient percentages as client orders change.
+  - Edit, update, and archive existing formulation records with full data integrity.
+  - Log quality control inspection results with inspector attribution, test parameters (fat %, ingredients), pass/fail statuses, and audit remarks.
+
+#### 2. End-to-End E-Commerce Platform (B2C Retail Channel)
+
+- Developed a consumer-facing e-commerce storefront allowing customers across Sri Lanka to browse value-added coconut products, view detailed ingredient and nutritional profiles, and maintain a persistent shopping cart.
+- Provided a secure multi-tier checkout process with automated order placement, customer address collection, and multiple payment methods: **Cash on Delivery (COD)** and **Card Payment**.
+- Developed a comprehensive **Administrative Control Dashboard** granting system administrators unified oversight of product listings, incoming customer orders, fulfillment states, employee master records, customer feedback, and contact inquiries.
 
 ---
 
