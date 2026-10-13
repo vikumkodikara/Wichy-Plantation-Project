@@ -20,20 +20,101 @@
                 <i class="fa-solid fa-location-dot" style="margin-right: 0.75rem; width: 1em; text-align: center; margin-top: 4px; color: white;"></i> 107, UDA Industrial Estate, Katuwana, Homagama, Sri Lanka.
             </div>
         </div>
-        <form action="save_message.php" method="POST"
+        <form id="comment-form" action="save_message.php" method="POST"
       style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 1rem;">
 
-    <input type="text" name="user_name" placeholder="NAME" required
+    <input type="text" id="user_name" name="user_name" placeholder="NAME" required
            style="padding: 0.75rem; border-radius: 0.5rem; border: none;">
 
-    <input type="email" name="user_email" placeholder="E - Mail" required
+    <input type="email" id="user_email" name="user_email" placeholder="E - Mail" required
            style="padding: 0.75rem; border-radius: 0.5rem; border: none;">
 
-    <textarea name="user_comment" placeholder="Comment" required
+    <textarea id="user_comment" name="user_comment" placeholder="Comment" required
               style="padding: 0.75rem; border-radius: 0.5rem; border: none; min-height: 80px;"></textarea>
 
-    <button type="submit"
+    <button type="submit" id="submit-btn"
             style="background: #43a047; color: white; padding: 0.75rem; border-radius: 9999px; border: none; font-weight: bold;">SUBMIT</button>
+            
+    <!-- Success message container -->
+    <div id="success-message" style="display: none; background: #d4edda; color: #155724; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #c3e6cb; text-align: center; font-weight: bold;">
+        Your comment added successfully!
+    </div>
+    
+    <!-- Error message container -->
+    <div id="error-message" style="display: none; background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #f5c6cb; text-align: center; font-weight: bold;">
+        Something went wrong. Please try again.
+    </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('comment-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const successMessage = document.getElementById('success-message');
+    const errorMessage = document.getElementById('error-message');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Hide any previous messages
+        successMessage.style.display = 'none';
+        errorMessage.style.display = 'none';
+        
+        // Change button text to show loading
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Submitting...';
+        submitBtn.disabled = true;
+        
+        // Create FormData object
+        const formData = new FormData(form);
+        
+        // Send AJAX request
+        fetch('save_message.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            // Check if the response contains success message
+            if (data.includes('Thank You') || data.includes('successfully')) {
+                // Show success message
+                successMessage.style.display = 'block';
+                
+                // Clear form fields
+                document.getElementById('user_name').value = '';
+                document.getElementById('user_email').value = '';
+                document.getElementById('user_comment').value = '';
+                
+                // Hide success message after 5 seconds
+                setTimeout(function() {
+                    successMessage.style.display = 'none';
+                }, 5000);
+            } else {
+                // Show error message
+                errorMessage.style.display = 'block';
+                
+                // Hide error message after 5 seconds
+                setTimeout(function() {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            errorMessage.style.display = 'block';
+            
+            // Hide error message after 5 seconds
+            setTimeout(function() {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        })
+        .finally(() => {
+            // Reset button
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+});
+</script>
     </div>
 </footer>
