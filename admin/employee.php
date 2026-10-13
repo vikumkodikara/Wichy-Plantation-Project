@@ -27,6 +27,92 @@ if (isset($_GET['deleted'])) {
     $success = 'Employee deleted successfully.';
 }
 
+// Handle Edit - Get employee data for editing
+$edit = null;
+if (isset($_GET['edit'])) {
+    $eid = (int)$_GET['edit'];
+    $stmt = $conn->prepare("SELECT * FROM employees WHERE Emp_ID = ?");
+    $stmt->bind_param("i", $eid);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $edit = $result->fetch_assoc();
+    
+    // Get phone numbers for this employee
+    if ($edit) {
+        $stmt = $conn->prepare("SELECT Phone FROM employee_phones WHERE Emp_ID = ?");
+        $stmt->bind_param("i", $eid);
+        $stmt->execute();
+        $phoneResult = $stmt->get_result();
+        $edit['phone_numbers'] = [];
+        while ($phone = $phoneResult->fetch_assoc()) {
+            $edit['phone_numbers'][] = $phone['Phone'];
+        }
+    }
+}
+
+// Handle Update (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
+    $eid = (int)$_POST['emp_id'];
+    $name = trim($_POST['name'] ?? '');
+    $role = trim($_POST['role'] ?? '');
+    $address = trim($_POST['address'] ?? '');
+    $phones = $_POST['phones'] ?? [];
+
+    // Server-side validation for required fields
+    if (!$name || !$role || !$address) {
+        $error = 'Please fill name, role and address.';
+    } else {
+        // Update employee basic info
+        $stmt = $conn->prepare("UPDATE employees SET Name = ?, Role = ?, Address = ? WHERE Emp_ID = ?");
+        $stmt->bind_param("sssi", $name, $role, $address, $eid);
+        
+        if ($stmt->execute()) {
+            // Delete existing phone numbers
+            $stmt = $conn->prepare("DELETE FROM employee_phones WHERE Emp_ID = ?");
+            $stmt->bind_param("i", $eid);
+            $stmt->execute();
+            
+            // Add updated phone numbers
+            $validPhones = [];
+            foreach ($phones as $rawPhone) {
+                $rawPhone = trim($rawPhone);
+                if ($rawPhone === '') continue;
+                
+                $normalized = preg_replace('/[^\d+]/', '', $rawPhone);
+                
+                if (preg_match('/^(?:\+94|0)?[1-9]\d{8}$/', $normalized)) {
+                    if (strpos($normalized, '+94') === 0) {
+                        // Already has +94 prefix, keep as is
+                        $validPhones[] = $normalized;
+                    } elseif (strpos($normalized, '0') === 0) {
+                        $normalized = '+94' . substr($normalized, 1);
+                        $validPhones[] = $normalized;
+                    } else {
+                        $normalized = '+94' . $normalized;
+                        $validPhones[] = $normalized;
+                    }
+                }
+            }
+            
+            // Insert valid phone numbers
+            foreach ($validPhones as $phone) {
+                $stmt = $conn->prepare("INSERT INTO employee_phones (Emp_ID, Phone) VALUES (?, ?)");
+                $stmt->bind_param("is", $eid, $phone);
+                $stmt->execute();
+            }
+            
+            header('Location: employee.php?updated=1');
+            exit;
+        } else {
+            $error = 'Update failed: ' . $conn->error;
+        }
+    }
+}
+
+if (isset($_GET['updated'])) {
+    $success = 'Employee updated successfully.';
+}
+
 // Handle Add (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add'])) {
     $name = trim($_POST['name'] ?? '');
@@ -525,6 +611,67 @@ document.addEventListener('DOMContentLoaded', function(){
         </form>
     </div>
 
+    <!-- Edit Employee Form -->
+    <?php if (isset($edit) && $edit): ?>
+    <div style="background: #fff3e0; border: 3px solid #ff9800; border-radius: 12px; padding: 25px; margin: 30px 0; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.2);">
+        <div style="background: #ff9800; color: white; padding: 15px; margin: -25px -25px 20px -25px; border-radius: 9px 9px 0 0;">
+            <h3 style="margin: 0; font-size: 20px;">✏️ Edit Employee: <?= htmlspecialchars($edit['Name']) ?></h3>
+        </div>
+        
+        <form method="POST" style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #ff9800;">
+            <input type="hidden" name="emp_id" value="<?= $edit['Emp_ID'] ?>">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e65100;">👤 Employee Name:</label>
+                    <input type="text" name="name" value="<?= htmlspecialchars($edit['Name']) ?>" required
+                           style="width: 100%; padding: 12px; border: 2px solid #ff9800; border-radius: 6px; font-size: 16px;">
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e65100;">💼 Role/Position:</label>
+                    <input type="text" name="role" value="<?= htmlspecialchars($edit['Role']) ?>" required
+                           style="width: 100%; padding: 12px; border: 2px solid #ff9800; border-radius: 6px; font-size: 16px;">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e65100;">🏠 Address:</label>
+                <textarea name="address" rows="3" required
+                          style="width: 100%; padding: 12px; border: 2px solid #ff9800; border-radius: 6px; font-size: 16px; resize: vertical;"><?= htmlspecialchars($edit['Address']) ?></textarea>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #e65100;">📱 Phone Numbers:</label>
+                <div id="edit-phone-container">
+                    <?php 
+                    $existingPhones = $edit['phone_numbers'] ?? [];
+                    for ($i = 0; $i < max(3, count($existingPhones)); $i++): 
+                    ?>
+                    <div style="margin-bottom: 8px;">
+                        <input type="tel" name="phones[]" 
+                               value="<?= isset($existingPhones[$i]) ? htmlspecialchars($existingPhones[$i]) : '' ?>"
+                               placeholder="+94XXXXXXXXX or 0XXXXXXXXX"
+                               style="width: 100%; padding: 10px; border: 2px solid #ff9800; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+                <button type="submit" name="update" 
+                        style="background: #4caf50; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600;">
+                    💾 Update Employee
+                </button>
+                <a href="employee.php" 
+                   style="background: #f44336; color: white; padding: 15px 30px; border-radius: 8px; font-size: 16px; text-decoration: none; font-weight: 600;">
+                    ❌ Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+    <?php endif; ?>
+
     <!-- Employee Table -->
     <h3>👥 Employee Directory</h3>
     <?php if (!empty($employee)): ?>
@@ -556,11 +703,18 @@ document.addEventListener('DOMContentLoaded', function(){
                     <?= htmlspecialchars($e['Phones'] ?? 'N/A') ?>
                 </td>
                 <td>
-                    <a href="employee.php?delete=<?= (int)$e['Emp_ID'] ?>"
-                       class="btn btn-danger"
-                       onclick="return confirm('⚠️ Are you sure you want to delete this employee?\\n\\nEmployee: <?= htmlspecialchars($e['Name']) ?>\\nRole: <?= htmlspecialchars($e['Role']) ?>')">
-                        🗑️ Delete
-                    </a>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="employee.php?edit=<?= (int)$e['Emp_ID'] ?>"
+                           class="btn btn-light btn-sm"
+                           style="background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;">
+                            ✏️ Edit
+                        </a>
+                        <a href="employee.php?delete=<?= (int)$e['Emp_ID'] ?>"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('⚠️ Are you sure you want to delete this employee?\\n\\nEmployee: <?= htmlspecialchars($e['Name']) ?>\\nRole: <?= htmlspecialchars($e['Role']) ?>')">
+                            🗑️ Delete
+                        </a>
+                    </div>
                 </td>
             </tr>
             <?php endforeach; ?>

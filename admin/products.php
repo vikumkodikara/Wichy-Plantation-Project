@@ -20,22 +20,79 @@ if (isset($_GET['delete'])) {
 
 // Handle update
 $edit = null;
+$updateMessage = '';
+$debugMessage = '';
+
+// Debug: Check if edit parameter is received
 if (isset($_GET['edit'])) {
     $pid = (int)$_GET['edit'];
+    $debugMessage .= "Edit request for product ID: $pid<br>";
+    
     $res = $conn->query("SELECT * FROM product WHERE product_id=$pid");
-    $edit = $res->fetch_assoc();
+    if ($res && $res->num_rows > 0) {
+        $edit = $res->fetch_assoc();
+        $debugMessage .= "Product found: " . $edit['product_name'] . "<br>";
+    } else {
+        $updateMessage = '<div class="alert alert-error">Product not found! ID: ' . $pid . '</div>';
+        $debugMessage .= "Product NOT found for ID: $pid<br>";
+    }
 }
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
     $pid = (int)$_POST['pid'];
     $name = trim($_POST['name']);
-    $price = trim($_POST['price']);
+    $price = (float)trim($_POST['price']);
     $img = trim($_POST['img']);
     $desc = trim($_POST['desc']);
-    $stmt = $conn->prepare('UPDATE product SET product_name=?, product_price=?, product_image=?, description=? WHERE product_id=?');
-    $stmt->bind_param('sdssi', $name, $price, $img, $desc, $pid);
-    $stmt->execute();
-    header('Location: products.php');
-    exit;
+    
+    $debugMessage .= "Update request: PID=$pid, Name=$name, Price=$price<br>";
+    
+    // Handle file upload if provided
+    if (isset($_FILES['img_file']) && $_FILES['img_file']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = '../public/images/';
+        $fileName = 'img_' . uniqid() . '.' . pathinfo($_FILES['img_file']['name'], PATHINFO_EXTENSION);
+        $uploadPath = $uploadDir . $fileName;
+        
+        // Validate file type
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $fileExtension = strtolower(pathinfo($_FILES['img_file']['name'], PATHINFO_EXTENSION));
+        
+        if (in_array($fileExtension, $allowedTypes)) {
+            if (move_uploaded_file($_FILES['img_file']['tmp_name'], $uploadPath)) {
+                $img = 'public/images/' . $fileName; // Store relative path
+                $debugMessage .= "File uploaded successfully: $img<br>";
+            } else {
+                $updateMessage = '<div class="alert alert-error">Error uploading file!</div>';
+            }
+        } else {
+            $updateMessage = '<div class="alert alert-error">Invalid file type! Please upload JPG, PNG, GIF, or WebP images.</div>';
+        }
+    }
+    
+    // Validate inputs
+    if (empty($name) || $price <= 0 || empty($img)) {
+        $updateMessage = '<div class="alert alert-error">Please fill all required fields with valid data!</div>';
+    } else {
+        $stmt = $conn->prepare('UPDATE product SET product_name=?, product_price=?, product_image=?, description=? WHERE product_id=?');
+        $stmt->bind_param('sdssi', $name, $price, $img, $desc, $pid);
+        
+        if ($stmt->execute()) {
+            $updateMessage = '<div class="alert alert-success">Product updated successfully!</div>';
+            // Clear the edit form after successful update
+            $edit = null;
+            // Optional: Redirect to avoid form resubmission
+            header('Location: products.php?updated=1');
+            exit;
+        } else {
+            $updateMessage = '<div class="alert alert-error">Error updating product: ' . $stmt->error . '</div>';
+        }
+        $stmt->close();
+    }
+}
+
+// Show update success message if redirected
+if (isset($_GET['updated'])) {
+    $updateMessage = '<div class="alert alert-success">Product updated successfully!</div>';
 }
 
 // Optimize query - only select needed columns and limit results for better performance
@@ -280,6 +337,17 @@ body {
 </div>
 </div>
 
+<?php if (!empty($updateMessage)): ?>
+    <?= $updateMessage ?>
+<?php endif; ?>
+
+<?php if (!empty($debugMessage)): ?>
+    <div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+        <strong>Debug Info:</strong><br>
+        <?= $debugMessage ?>
+    </div>
+<?php endif; ?>
+
 <div style="margin-bottom: 20px; padding: 16px; background: var(--color-bg-light-card); border-radius: 8px; border-left: 4px solid var(--color-main-green);">
     <h3 style="margin: 0 0 8px 0; color: var(--color-dark-green-text);">📊 Products Overview</h3>
     <p style="margin: 0; color: var(--color-gray-600);">Total Products: <strong><?= count($products) ?></strong></p>
@@ -328,21 +396,110 @@ body {
 </tbody>
 </table>
 <?php if ($edit): ?>
-<hr>
-<h3>Edit Product</h3>
-<form method="post">
-    <input type="hidden" name="pid" value="<?= $edit['product_id'] ?>">
-    <label>Name</label>
-    <input type="text" name="name" value="<?= htmlspecialchars($edit['product_name']) ?>" required>
-    <label>Price</label>
-    <input type="number" step="0.01" name="price" value="<?= htmlspecialchars($edit['product_price']) ?>" required>
-    <label>Image Link (PNG URL)</label>
-    <input type="url" name="img" value="<?= htmlspecialchars($edit['product_image']) ?>" required>
-    <label>Description</label>
-    <textarea name="desc" rows="3"><?= htmlspecialchars($edit['description']) ?></textarea>
-    <button class="btn btn-primary" type="submit" name="update">Update</button>
-    <a href="products.php" class="btn btn-light">Cancel</a>
-</form>
+<!-- EDIT FORM STARTS HERE - SHOULD BE VERY VISIBLE -->
+<div style="margin-top: 30px; padding: 20px; background: #ffeb3b !important; border: 5px solid #ff5722 !important; border-radius: 8px; box-shadow: 0 4px 20px rgba(255,87,34,0.3);">
+    <div style="background: #4CAF50; color: white; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0;">
+        <h2 style="margin: 0; font-size: 24px;">🔥 EDIT FORM IS ACTIVE 🔥</h2>
+        <p style="margin: 5px 0 0 0;">✏️ Editing Product #<?= $edit['product_id'] ?>: <?= htmlspecialchars($edit['product_name']) ?></p>
+    </div>
+    
+    <div style="background: #e8f5e9; padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 2px solid #4CAF50;">
+        <strong>⚠️ IMPORTANT:</strong> The edit form is displayed below. Scroll down if you don't see it!
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" style="background: white; padding: 20px; border-radius: 8px; border: 3px solid #4CAF50;">
+        <input type="hidden" name="pid" value="<?= $edit['product_id'] ?>">
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2E7D32; font-size: 16px;">Product Name:</label>
+            <input type="text" name="name" value="<?= htmlspecialchars($edit['product_name']) ?>" required
+                   style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 6px; font-size: 16px; background: #f9f9f9;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2E7D32; font-size: 16px;">Price (Rs):</label>
+            <input type="number" step="0.01" name="price" value="<?= htmlspecialchars($edit['product_price']) ?>" required
+                   style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 6px; font-size: 16px; background: #f9f9f9;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #2E7D32; font-size: 16px;">Current Image:</label>
+            <div style="margin-bottom: 15px;">
+                <img src="../<?= htmlspecialchars($edit['product_image']) ?>" alt="Current Image" 
+                     style="max-width: 200px; max-height: 200px; border: 2px solid #ddd; border-radius: 6px; object-fit: cover;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6;">
+            <label style="display: block; margin-bottom: 10px; font-weight: 600; color: #2E7D32; font-size: 16px;">Update Product Image:</label>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">📁 Option 1: Upload from Device</label>
+                <input type="file" name="img_file" accept="image/*" 
+                       style="width: 100%; padding: 10px; border: 2px solid #4CAF50; border-radius: 6px; background: white; font-size: 14px;">
+                <small style="color: #6c757d; font-size: 12px;">Supported: JPG, PNG, GIF, WebP (Max 5MB)</small>
+            </div>
+            
+            <div style="text-align: center; margin: 10px 0; color: #6c757d; font-weight: 500;">
+                ── OR ──
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #495057;">🔗 Option 2: Use Image URL</label>
+                <input type="url" name="img" value="<?= htmlspecialchars($edit['product_image']) ?>" 
+                       placeholder="https://example.com/image.jpg"
+                       style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 6px; font-size: 16px; background: white;">
+                <small style="color: #6c757d; font-size: 12px;">Note: File upload will take priority over URL if both are provided</small>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2E7D32; font-size: 16px;">Description:</label>
+            <textarea name="desc" rows="4" 
+                      style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 6px; font-size: 16px; resize: vertical; background: #f9f9f9;"><?= htmlspecialchars($edit['description']) ?></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <button type="submit" name="update" 
+                    style="background: #4CAF50; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 10px rgba(76,175,80,0.3);">
+                ✅ UPDATE PRODUCT NOW
+            </button>
+            <a href="products.php" 
+               style="background: #f44336; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; text-decoration: none; display: inline-block; font-weight: 600; box-shadow: 0 4px 10px rgba(244,67,54,0.3);">
+                ❌ CANCEL EDIT
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Scroll to edit form and highlight it
+setTimeout(function() {
+    const editForm = document.querySelector('div[style*="background: #ffeb3b"]');
+    if (editForm) {
+        editForm.scrollIntoView({behavior: 'smooth', block: 'center'});
+        // Flash the form to make it more noticeable
+        let flash = 0;
+        const flashInterval = setInterval(function() {
+            editForm.style.background = flash % 2 ? '#ffeb3b' : '#ff9800';
+            flash++;
+            if (flash > 6) {
+                clearInterval(flashInterval);
+                editForm.style.background = '#ffeb3b';
+            }
+        }, 200);
+    }
+}, 100);
+</script>
+
+<?php else: ?>
+    <!-- Debug: Show if no edit form is displayed -->
+    <?php if (isset($_GET['edit'])): ?>
+        <div style="background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; margin-top: 20px; border: 3px solid #f44336;">
+            <strong>🚨 DEBUG ERROR:</strong> Edit parameter received but no product data loaded. Check if product exists.
+            <br><strong>Product ID requested:</strong> <?= (int)$_GET['edit'] ?>
+        </div>
+    <?php endif; ?>
 <?php endif; ?>
 </div>
 </body>

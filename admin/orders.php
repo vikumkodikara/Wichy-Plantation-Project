@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-$res = $conn->query("SELECT * FROM orders ORDER BY created_at DESC");
+$res = $conn->query("SELECT o.*, p.product_price FROM orders o LEFT JOIN product p ON o.product_id = p.product_id ORDER BY o.created_at DESC");
 $orders = $res->fetch_all(MYSQLI_ASSOC);
 ?>
 <!doctype html>
@@ -324,15 +324,13 @@ tr:hover td {
             <div class="stat-label">Total Orders</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number"><?= count(array_filter($orders, fn($o) => $o['status'] === 'pending')) ?></div>
-            <div class="stat-label">Pending Orders</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number"><?= count(array_filter($orders, fn($o) => $o['status'] === 'completed')) ?></div>
-            <div class="stat-label">Completed Orders</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">Rs <?= number_format(array_sum(array_map(fn($o) => $o['qty'] * 100, $orders))) ?></div>
+            <?php 
+            $total_revenue = 0;
+            foreach($orders as $order) {
+                $total_revenue += $order['qty'] * ($order['product_price'] ?? 0);
+            }
+            ?>
+            <div class="stat-number">Rs <?= number_format($total_revenue, 2) ?></div>
             <div class="stat-label">Total Revenue</div>
         </div>
     </div>
@@ -346,7 +344,8 @@ tr:hover td {
                 <th>👤 Customer</th>
                 <th>📦 Product</th>
                 <th>📊 Quantity</th>
-                <th>📍 Address</th>
+                <th>� Paid Amount</th>
+                <th>�📍 Address</th>
                 <th>💳 Payment</th>
                 <th>📈 Status</th>
                 <th>📅 Date</th>
@@ -359,6 +358,14 @@ tr:hover td {
                 <td><?= htmlspecialchars($o['user_email']) ?></td>
                 <td><strong><?= htmlspecialchars($o['product_name']) ?></strong></td>
                 <td><span style="background: var(--light-green); padding: 4px 8px; border-radius: 6px; font-weight: 600;"><?= $o['qty'] ?></span></td>
+                <td>
+                    <?php 
+                    $total_amount = $o['qty'] * ($o['product_price'] ?? 0);
+                    ?>
+                    <span style="background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 14px;">
+                        Rs <?= number_format($total_amount, 2) ?>
+                    </span>
+                </td>
                 <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($o['address']) ?>">
                     <?= htmlspecialchars(strlen($o['address']) > 30 ? substr($o['address'], 0, 30) . '...' : $o['address']) ?>
                 </td>

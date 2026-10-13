@@ -2,6 +2,21 @@
 // admin/comments.php - Admin page to view customer comments
 require_once '../config.php';
 
+// Handle delete request
+if (isset($_POST['delete_comment']) && isset($_POST['comment_id'])) {
+    $comment_id = (int)$_POST['comment_id'];
+    $delete_sql = "DELETE FROM comments WHERE id = ?";
+    $stmt = $conn->prepare($delete_sql);
+    $stmt->bind_param("i", $comment_id);
+    
+    if ($stmt->execute()) {
+        $success_message = "Comment deleted successfully.";
+    } else {
+        $error_message = "Error deleting comment: " . $conn->error;
+    }
+    $stmt->close();
+}
+
 // Fetch all comments
 $sql = "SELECT id, user_name, comment, created_at FROM comments ORDER BY created_at DESC";
 $result = $conn->query($sql);
@@ -30,6 +45,11 @@ $result = $conn->query($sql);
         .comment { color: #333; }
         .date { color: #888; font-size: 0.97em; }
         .no-comments { text-align: center; color: #888; padding: 40px 0; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; }
+        .delete-btn:hover { background: #c82333; }
+        .success-message { background: #d4edda; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #c3e6cb; }
+        .error-message { background: #f8d7da; color: #721c24; padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #f5c6cb; }
+        .actions-col { width: 80px; text-align: center; }
     </style>
 </head>
 <body>
@@ -39,9 +59,18 @@ $result = $conn->query($sql);
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
                 Back
             </a>
-            <a class="dash-link" href="admin.php">Go to Dashboard</a>
+            
         </div>
         <h1>Customer Comments</h1>
+        
+        <?php if (isset($success_message)): ?>
+            <div class="success-message"><?= htmlspecialchars($success_message) ?></div>
+        <?php endif; ?>
+        
+        <?php if (isset($error_message)): ?>
+            <div class="error-message"><?= htmlspecialchars($error_message) ?></div>
+        <?php endif; ?>
+        
         <?php if ($result && $result->num_rows > 0): ?>
         <table>
             <thead>
@@ -50,6 +79,7 @@ $result = $conn->query($sql);
                     <th>Name</th>
                     <th>Comment</th>
                     <th>Date</th>
+                    <th class="actions-col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,6 +89,12 @@ $result = $conn->query($sql);
                     <td class="user"><?= htmlspecialchars($row['user_name']) ?></td>
                     <td class="comment"><?= nl2br(htmlspecialchars($row['comment'])) ?></td>
                     <td class="date"><?= $row['created_at'] ?></td>
+                    <td class="actions-col">
+                        <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this comment?');">
+                            <input type="hidden" name="comment_id" value="<?= $row['id'] ?>">
+                            <button type="submit" name="delete_comment" class="delete-btn">Delete</button>
+                        </form>
+                    </td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>

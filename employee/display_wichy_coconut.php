@@ -202,7 +202,13 @@ echo "<table>
 // Fat % row
 echo "<tr class='fat-row'>
   <td>Fat %</td>
-  <td>Mr. <input type='text' name='inspector[Fat %]' placeholder='Inspector name'></td>
+  <td>
+    <select name='inspector_title[Fat %]' style='width: 60px; margin-right: 5px;'>
+      <option value='Mr.'>Mr.</option>
+      <option value='Mrs.'>Mrs.</option>
+    </select>
+    <input type='text' name='inspector[Fat %]' placeholder='Inspector name' style='width: 120px;'>
+  </td>
   <td>
     <select name='status[Fat %]'>
       <option>Pending</option>
@@ -217,7 +223,13 @@ echo "<tr class='fat-row'>
 // Ingredients row
 echo "<tr class='ingredients-row'>
   <td>Ingredients</td>
-  <td>Mr. <input type='text' name='inspector[Ingredients]' placeholder='Inspector name'></td>
+  <td>
+    <select name='inspector_title[Ingredients]' style='width: 60px; margin-right: 5px;'>
+      <option value='Mr.'>Mr.</option>
+      <option value='Mrs.'>Mrs.</option>
+    </select>
+    <input type='text' name='inspector[Ingredients]' placeholder='Inspector name' style='width: 120px;'>
+  </td>
   <td>
     <select name='status[Ingredients]'>
       <option>Pending</option>

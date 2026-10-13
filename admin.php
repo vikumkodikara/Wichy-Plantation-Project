@@ -73,7 +73,7 @@ $recent_orders = $recent_orders_result->fetch_all(MYSQLI_ASSOC);
             gap: 20px;
         }
         .logout-btn {
-            background: #5b9bd5;
+            background: #dc3545;
             color: white;
             padding: 8px 16px;
             border-radius: 6px;
@@ -82,7 +82,7 @@ $recent_orders = $recent_orders_result->fetch_all(MYSQLI_ASSOC);
             transition: background 0.2s;
         }
         .logout-btn:hover {
-            background: #3a7bd5;
+            background: #c82333;
         }
         .admin-container {
             max-width: 1200px;
@@ -158,19 +158,29 @@ $recent_orders = $recent_orders_result->fetch_all(MYSQLI_ASSOC);
             color: #2d3a4a;
         }
         .recent-list {
-            max-height: 300px;
+            min-height: 250px;
+            max-height: 350px;
             overflow-y: auto;
+            padding: 5px;
         }
         .recent-item {
-            padding: 12px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background: #f7fafc;
+            border: 1px solid #e0eafc;
             font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .recent-item:hover {
+            background: #e0eafc;
         }
         .recent-item:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
         }
         .recent-item strong {
             color: #2d3a4a;
+            font-size: 1rem;
         }
         .role-badge {
             display: inline-block;
@@ -263,16 +273,22 @@ $recent_orders = $recent_orders_result->fetch_all(MYSQLI_ASSOC);
                     <?php if (!empty($recent_users)): ?>
                         <?php foreach ($recent_users as $user): ?>
                             <div class="recent-item">
-                                <strong><?= htmlspecialchars($user['username']) ?></strong>
-                                <span class="role-badge role-<?= $user['role'] ?>"><?= $user['role'] ?></span>
-                                <br>
-                                <small><?= htmlspecialchars($user['email']) ?></small>
-                                <br>
-                                <small>Joined: <?= date('M d, Y', strtotime($user['created_at'])) ?></small>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <strong><?= htmlspecialchars($user['username']) ?></strong>
+                                    <span class="role-badge role-<?= $user['role'] ?>"><?= $user['role'] ?></span>
+                                </div>
+                                <div style="color: #666; font-size: 0.85rem;">
+                                    📧 <?= htmlspecialchars($user['email']) ?>
+                                </div>
+                                <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">
+                                    📅 Joined: <?= date('M d, Y', strtotime($user['created_at'])) ?>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <p>No users found.</p>
+                        <div class="recent-item" style="text-align: center; color: #666;">
+                            <p>👤 No users found.</p>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -283,17 +299,24 @@ $recent_orders = $recent_orders_result->fetch_all(MYSQLI_ASSOC);
                     <?php if (!empty($recent_orders)): ?>
                         <?php foreach ($recent_orders as $order): ?>
                             <div class="recent-item">
-                                <strong>Order #<?= $order['order_id'] ?></strong>
-                                <br>
-                                Customer: <?= htmlspecialchars($order['username']) ?>
-                                <br>
-                                Product: <?= htmlspecialchars($order['product_name']) ?>
-                                <br>
-                                <small>Status: <?= htmlspecialchars($order['status']) ?></small>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <strong>📋 Order #<?= $order['order_id'] ?></strong>
+                                    <span style="background: #e8f5e8; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
+                                        <?= htmlspecialchars($order['status']) ?>
+                                    </span>
+                                </div>
+                                <div style="color: #666; font-size: 0.85rem; margin-bottom: 4px;">
+                                    👤 Customer: <?= htmlspecialchars($order['username']) ?>
+                                </div>
+                                <div style="color: #666; font-size: 0.85rem;">
+                                    🥥 Product: <?= htmlspecialchars($order['product_name']) ?>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <p>No orders found.</p>
+                        <div class="recent-item" style="text-align: center; color: #666;">
+                            <p>📦 No orders found.</p>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
