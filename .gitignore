@@ -1,0 +1,20 @@
+# Environment and configuration
+.env
+config.local.php
+
+# Uploaded files
+public/images/profiles/
+public/images/products/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS generated files
+Desktop.ini
+ehthumbs.db
